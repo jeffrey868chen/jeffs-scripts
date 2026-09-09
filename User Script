@@ -1,0 +1,228 @@
+#!/bin/bash
+PASSWD_FILE="/etc/passwd"
+RED='\033[1;31m'
+GREEN='\033[1;32m'
+BLUE='\033[1;34m'
+NC='\033[0m'
+if [[ ! -f "$PASSWD_FILE" ]]; then
+echo -e "${RED}Error:${NC} $PASSWD_FILE not found."
+exit 1
+fi
+is_admin() {
+local user="$1"
+if id -nG "$user" 2>/dev/null | grep -qwE "sudo|wheel|adm"; then
+    return 0
+else
+    return 1
+fi
+
+}
+regular_users=()
+admin_users=()
+echo "Enter REGULAR users (one per line)."
+echo "Type DONE when finished."
+echo
+while true; do
+read -r user
+[[ "$user" == "DONE" ]] && break
+[[ "$user" == "root" ]] && continue
+regular_users+=("$user")
+done
+echo
+echo "Enter ADMIN users (one per line)."
+echo "Type DONE when finished."
+echo
+while true; do
+read -r user
+[[ "$user" == "DONE" ]] && break
+[[ "$user" == "root" ]] && continue
+admin_users+=("$user")
+done
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING REGULAR USERS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+for user in "${regular_users[@]}"; do
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+
+if [[ -z "$passwd_line" ]]; then
+    echo -e "${RED}[MISSING]${NC} User '$user' does NOT exist."
+    echo
+    continue
+fi
+
+echo -e "${GREEN}[FOUND]${NC} User '$user'"
+echo "  Full Entry: $passwd_line"
+
+uid=$(echo "$passwd_line" | cut -d: -f3)
+shell=$(echo "$passwd_line" | cut -d: -f7)
+
+if [[ "$uid" -lt 1000 ]]; then
+    echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
+fi
+
+if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
+    echo -e "  ${RED}[WARNING]${NC} User does not have an interactive shell ($shell)"
+fi
+
+if is_admin "$user"; then
+    echo -e "  ${RED}[WARNING]${NC} Regular user has admin privileges!"
+else
+    echo -e "  ${GREEN}[PASS]${NC} User is not an administrator."
+fi
+
+echo
+
+done
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING ADMIN USERS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+for user in "${admin_users[@]}"; do
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+
+if [[ -z "$passwd_line" ]]; then
+    echo -e "${RED}[MISSING]${NC} Admin '$user' does NOT exist."
+    echo
+    continue
+fi
+
+
+ROOT_IMPOSTERS=$(awk -F: '$3 == 0 && $1 != "root" {print $1}' /etc/passwd)
+
+if [[ -n "$ROOT_IMPOSTERS" ]]; then
+    echo -e "  ${RED}[WARNING]${NC} There are root imposters:"
+    echo "$ROOT_IMPOSTERS"
+fi
+
+echo -e "${GREEN}[FOUND]${NC} Admin '$user'"
+echo "  Full Entry: $passwd_line"
+
+uid=$(echo "$passwd_line" | cut -d: -f3)
+shell=$(echo "$passwd_line" | cut -d: -f7)
+
+if [[ "$uid" -lt 1000 ]]; then
+    echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
+fi
+
+if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
+    echo -e "  ${RED}[WARNING]${NC} Admin does not have an interactive shell ($shell)"
+fi
+
+if is_admin "$user"; then
+    echo -e "  ${GREEN}[PASS]${NC} User has admin privileges."
+else
+    echo -e "  ${RED}[WARNING]${NC} User is listed as an admin but is NOT in sudo/wheel/adm."
+fi
+
+echo
+
+done
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR UNAUTHORIZED USERS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+while IFS=: read -r username password uid gid comment home shell; do
+# Ignore root completely
+[[ "$username" == "root" ]] && continue
+
+# Ignore non-login shells
+grep -qx "$shell" /etc/shells 2>/dev/null || continue
+
+# Ignore system accounts
+[[ "$uid" -lt 1000 ]] && continue
+
+authorized=false
+
+for user in "${regular_users[@]}"; do
+    [[ "$username" == "$user" ]] && authorized=true && break
+done
+
+if [[ "$authorized" == false ]]; then
+    for user in "${admin_users[@]}"; do
+        [[ "$username" == "$user" ]] && authorized=true && break
+    done
+fi
+
+if [[ "$authorized" == false ]]; then
+
+    echo -e "${RED}[UNAUTHORIZED]${NC} User '$username' has a valid shell but is not on either list."
+    echo "  Full Entry: $username:$password:$uid:$gid:$comment:$home:$shell"
+
+    if is_admin "$username"; then
+        echo -e "  ${RED}[CRITICAL]${NC} User has admin privileges!"
+    fi
+
+    echo
+fi
+
+
+
+CURRENT_USER="${SUDO_USER:-root}"
+
+# Get normal human users (UID >= 1000), excluding the current user
+awk -F: -v current="$CURRENT_USER" '
+    $3 >= 1000 && $1 != current && $1 != "nobody" {
+        print $1
+    }
+' /etc/passwd | while read -r user; do
+
+    echo "========================================"
+    echo "Updating: $user"
+    echo "========================================"
+
+    # Password aging:
+    # minimum = 7 days
+    # maximum = 90 days
+    # warning = 14 days
+    chage -m 7 -M 90 -W 14 "$user"
+
+    # Change password
+    echo "$user:CyberPatriot1!" | chpasswd
+
+    echo
+done
+
+echo "Done."
+
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING SYSTEM USERS FOR VALID SHELLS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
+while IFS=: read -r username password uid gid comment home shell; do
+
+    # Ignore root
+    [[ "$username" == "root" ]] && continue
+
+    # Only check system users
+    [[ "$uid" -ge 1000 ]] && continue
+
+    # Check whether the shell is listed in /etc/shells
+    if grep -qx "$shell" /etc/shells 2>/dev/null; then
+        echo -e "${RED}[WARNING]${NC} System user '$username' has a valid login shell."
+        echo "  Full Entry: $username:$password:$uid:$gid:$comment:$home:$shell"
+        echo
+    fi
+
+done < "$PASSWD_FILE"
+
+    echo "========================================"
+    echo "Updating: gecos fields and descriptions"
+    echo "========================================"
+
+while IFS=: read -r username _ uid _ _ _ _; do
+    if [ "$uid" -ge 1000 ] && [ "$username" != "nobody" ]; then
+        usermod -p 'x' -c ',,,' "$username"
+    fi
+done < /etc/passwd
+
+done < "$PASSWD_FILE"
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}AUDIT COMPLETE${NC}"
+echo -e "${BLUE}========================================${NC}"
