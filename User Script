@@ -1,10 +1,33 @@
 #!/bin/bash
 PASSWD_FILE="/etc/passwd"
+
+BOLD='\033[1m'
+LIGHT='\033[2m'
+ITALIC='\033[3m'
+UNDERLINE='\033[4m'
+BLINK='\033[5m'
+INVERT='\033[6m'
+STRIKETHROUGH='\033[7m'
+
+BLACK='\033[1;30m'
 RED='\033[1;31m'
 GREEN='\033[1;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[1;34m'
-# The above values are ANSII codes to change color for aesthetic values (wow)!!
+PURPLE='\033[1;35m'
+CYAN='\033[1;36m'
+WHITE='\033[1;37m'
+
+BLACKBG='\033[40m'
+REDBG='\033[41m'
+GREENBG='\033[42m'
+YELLOWBG='\033[43m'
+BLUEBG='\033[44m'
+PURPLEBG='\033[45m'
+CYANBG='\033[46m'
+WHITEBG='\033[47m'
+
+# The above values are ANSII codes to make it colored and bold for aesthetic values (wow)!!
 NC='\033[0m'
 #NC resets all values back to default
 
