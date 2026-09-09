@@ -77,7 +77,7 @@ all_users=("${regular_users[@]}" "${admin_users[@]}")
 
 echo
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CHECKING REGULAR USERS${NC}"
+echo -e "${BLUE}CHECKING FOR MISSING USERS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
@@ -101,6 +101,12 @@ shell=$(echo "$passwd_line" | cut -d: -f7)
 # Mark the third column of the password line as the user's id
 # Mark the seventh column of the password line as the user's shell
 
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR USERS WITH A BAD SHELL/UID${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
 if [[ "$uid" -lt 1000 ]]; then
     echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
 fi
@@ -108,6 +114,12 @@ fi
 if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
     echo -e "  ${RED}[WARNING]${NC} User does not have an interactive shell ($shell)"
 fi
+
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR USERS WITH ADMIN PERMS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
 
 if is_admin "$user"; then
     echo -e "  ${RED}[WARNING]${NC} Regular user has admin privileges!"
@@ -118,11 +130,13 @@ fi
 echo
 
 done
+
 echo
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CHECKING ADMIN USERS${NC}"
+echo -e "${BLUE}CHECKING FOR MISSING ADMINS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
+
 for user in "${admin_users[@]}"; do
 passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
 
@@ -135,6 +149,12 @@ fi
 uid=$(echo "$passwd_line" | cut -d: -f3)
 shell=$(echo "$passwd_line" | cut -d: -f7)
 
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR ADMINS WITH A BAD UIDS/SHELL${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
 if [[ "$uid" -lt 1000 ]]; then
     echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
 fi
@@ -146,6 +166,11 @@ fi
 echo -e "${GREEN}[FOUND]${NC} Admin '$user'"
 echo "  Full Entry: $passwd_line"
 
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING THAT ALL ADMINS ARE ADMINS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
 
 if is_admin "$user"; then
     echo -e "  ${GREEN}[PASS]${NC} User has admin privileges."
@@ -156,6 +181,12 @@ fi
 echo
 
 done
+
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR ROOT IMPOSTERS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
 
 ROOT_IMPOSTERS=$(awk -F: '$3 == 0 && $1 != "root" {print $1}' /etc/passwd)
 
