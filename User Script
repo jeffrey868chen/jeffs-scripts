@@ -166,6 +166,7 @@ fi
 if [[ "$home" != "/home/$user" ]]; then
     echo -e "${RED}[WARNING]${NC} Home directory is not /home/$user ($home)"
 fi
+done
 
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}CHECKING FOR UNAUTHORIZED USERS${NC}"
