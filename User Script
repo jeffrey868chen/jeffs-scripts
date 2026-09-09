@@ -47,6 +47,8 @@ read -r user
 admin_users+=("$user")
 done
 
+all_users=("${regular_users[@]}" "${admin_users[@]}")
+
 # Begin running the actual script
 
 echo
@@ -139,44 +141,55 @@ fi
 echo
 
 done
-echo
+
+
+for user in "${all_users[@]}"; do
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+
+user=$(echo "$passwd_line" | cut -d: -f1)
+passwd=$(echo "$passwd_line" | cut -d: -f2)
+uid=$(echo "$passwd_line" | cut -d: -f3)
+gid=$(echo "$passwd_line" | cut -d: -f4)
+gecos=$(echo "$passwd_line" | cut -d: -f5)
+home=$(echo "$passwd_line" | cut -d: -f6)
+shell=$(echo "$passwd_line" | cut -d: -f7)
+
+
+if [[ "$passwd" != "x" ]]; then
+    echo -e "${RED}[WARNING]${NC} Password field is not set to 'x' ($passwd)"
+fi
+
+if [[ "$gecos" != ",,," ]]; then
+    echo -e "${RED}[WARNING]${NC} GECOS field is not set to ,,, ($gecos)"
+fi
+
+if [[ "$home" != "/home/$user" ]]; then
+    echo -e "${RED}[WARNING]${NC} Home directory is not /home/$user ($home)"
+fi
+
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}CHECKING FOR UNAUTHORIZED USERS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
+
 while IFS=: read -r username password uid gid comment home shell; do
-# Ignore root completely
-[[ "$username" == "root" ]] && continue
 
-# Ignore non-login shells
-grep -qx "$shell" /etc/shells 2>/dev/null || continue
+    [[ "$username" == "root" ]] && continue
+    grep -qx "$shell" /etc/shells 2>/dev/null || continue
+    [[ "$uid" -lt 1000 ]] && continue
 
-# Ignore system accounts
-[[ "$uid" -lt 1000 ]] && continue
+    if ! printf '%s\n' "${all_users[@]}" | grep -qx "$username"; then
+        echo -e "${RED}[UNAUTHORIZED]${NC} User '$username' has a valid shell but is not on the list."
+        echo "  Full Entry: $username:$password:$uid:$gid:$comment:$home:$shell"
 
-authorized=false
+        if is_admin "$username"; then
+            echo -e "  ${RED}[CRITICAL]${NC} User has admin privileges!"
+        fi
 
-for user in "${regular_users[@]}"; do
-    [[ "$username" == "$user" ]] && authorized=true && break
-done
-
-if [[ "$authorized" == false ]]; then
-    for user in "${admin_users[@]}"; do
-        [[ "$username" == "$user" ]] && authorized=true && break
-    done
-fi
-
-if [[ "$authorized" == false ]]; then
-
-    echo -e "${RED}[UNAUTHORIZED]${NC} User '$username' has a valid shell but is not on either list."
-    echo "  Full Entry: $username:$password:$uid:$gid:$comment:$home:$shell"
-
-    if is_admin "$username"; then
-        echo -e "  ${RED}[CRITICAL]${NC} User has admin privileges!"
+        echo
     fi
 
-    echo
-fi
+done < "$PASSWD_FILE"
 
 
 
@@ -227,18 +240,6 @@ while IFS=: read -r username password uid gid comment home shell; do
         echo "  Full Entry: $username:$password:$uid:$gid:$comment:$home:$shell"
         echo
     fi
-
-done < "$PASSWD_FILE"
-
-    echo "========================================"
-    echo "Updating: gecos fields and descriptions"
-    echo "========================================"
-
-while IFS=: read -r username _ uid _ _ _ _; do
-    if [ "$uid" -ge 1000 ] && [ "$username" != "nobody" ]; then
-        usermod -p 'x' -c ',,,' "$username"
-    fi
-done < /etc/passwd
 
 done < "$PASSWD_FILE"
 echo
