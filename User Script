@@ -1,6 +1,9 @@
 #!/bin/bash
 PASSWD_FILE="/etc/passwd"
 
+regular_users=()
+admin_users=()
+
 BOLD='\033[1m'
 LIGHT='\033[2m'
 ITALIC='\033[3m'
@@ -27,9 +30,9 @@ PURPLEBG='\033[45m'
 CYANBG='\033[46m'
 WHITEBG='\033[47m'
 
-# The above values are ANSII codes to make it colored and bold for aesthetic values (wow)!!
 NC='\033[0m'
-#NC resets all values back to default
+
+# The above values are ANSII codes to make aesthetically pleasing text (wow)!!
 
 # Check if /etc/passwd exists and print an error message if it doesn't
 if [[ ! -f "$PASSWD_FILE" ]]; then
@@ -43,8 +46,6 @@ is_admin() {
     # The first part figures out what groups the user is in, while the second part greps for if the user is in the admin group
 }
 
-regular_users=()
-admin_users=()
 
 echo "Enter REGULAR users (one per line)."
 echo "Type DONE when finished."
@@ -142,15 +143,6 @@ if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
     echo -e "  ${RED}[WARNING]${NC} Admin does not have an interactive shell ($shell)"
 fi
 
-
-
-ROOT_IMPOSTERS=$(awk -F: '$3 == 0 && $1 != "root" {print $1}' /etc/passwd)
-
-if [[ -n "$ROOT_IMPOSTERS" ]]; then
-    echo -e "  ${RED}[WARNING]${NC} There are root imposters:"
-    echo "$ROOT_IMPOSTERS"
-fi
-
 echo -e "${GREEN}[FOUND]${NC} Admin '$user'"
 echo "  Full Entry: $passwd_line"
 
@@ -165,6 +157,12 @@ echo
 
 done
 
+ROOT_IMPOSTERS=$(awk -F: '$3 == 0 && $1 != "root" {print $1}' /etc/passwd)
+
+if [[ -n "$ROOT_IMPOSTERS" ]]; then
+    echo -e "  ${RED}[WARNING]${NC} There are root imposters:"
+    echo "$ROOT_IMPOSTERS"
+fi
 
 for user in "${all_users[@]}"; do
 passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
@@ -266,6 +264,19 @@ while IFS=: read -r username password uid gid comment home shell; do
     fi
 
 done < "$PASSWD_FILE"
+
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR CORRECT PASSWORD HASHES${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
+if [[ "$hash" == \$y\$* ]]; then
+    echo -e "${GREEN}[PASS]${NC} User '$user' is using yescrypt."
+else
+    echo -e "${RED}[WARNING]${NC} User '$user' is not using yescrypt."
+fi
+
 echo
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}AUDIT COMPLETE${NC}"
