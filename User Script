@@ -121,6 +121,20 @@ done
 
 echo
 echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING FOR SHELLS IN /etc/shells${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
+
+if grep -q "nologin" /etc/shells; then
+    echo -e "${RED}[WARNING]${NC} nologin is in /etc/shells"
+fi
+
+if grep -q "false" /etc/shells; then
+    echo -e "${RED}[WARNING]${NC} false is in /etc/shells"
+fi
+
+echo
+echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}CHECKING FOR USERS WITH ADMIN PERMS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
