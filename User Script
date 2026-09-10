@@ -36,8 +36,8 @@ NC='\033[0m'
 
 # Check if /etc/passwd exists and print an error message if it doesn't
 if [[ ! -f "$PASSWD_FILE" ]]; then
-echo -e "${RED}Error:${NC} /etc/passwd doesn't exist for sum reason, u should probably FIX IT."
-exit 1
+    echo -e "${RED}Error:${NC} /etc/passwd doesn't exist for sum reason, u should probably FIX IT."
+    exit 1
 fi
 
 if [[ "$EUID" -ne 0 ]]; then
@@ -55,24 +55,19 @@ echo "Enter REGULAR users (one per line)."
 echo "Type DONE when finished."
 echo " "
 while true; do
-# Create a loop where the person can enter in the users until something breaks the loop
-read -r user
-[[ "$user" == "DONE" ]] && break
-# If the user enters in DONE, then exit the loop
-regular_users+=("$user")
-# Otherwise, add that user to the list and continue
+    read -r user
+    [[ "$user" == "DONE" ]] && break
+    regular_users+=("$user")
 done
 
-# Repeat the same thing but for admin users
 echo
 echo "Enter ADMIN users (one per line)."
 echo "Type DONE when finished."
 echo
 while true; do
-read -r user
-[[ "$user" == "DONE" ]] && break
-[[ "$user" == "root" ]] && continue
-admin_users+=("$user")
+    read -r user
+    [[ "$user" == "DONE" ]] && break
+    admin_users+=("$user")
 done
 
 all_users=("${regular_users[@]}" "${admin_users[@]}")
@@ -86,18 +81,17 @@ echo -e "${BLUE}========================================${NC}"
 echo
 
 for user in "${regular_users[@]}"; do
-passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
 
-if [[ -z "$passwd_line" ]]; then
-    echo -e "${RED}[MISSING]${NC} User '$user' does NOT exist."
-    echo
-    continue
-fi
-# If the user's password line prints nothing, then print a warning
+    passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
 
-echo -e "${GREEN}[FOUND]${NC} User '$user'"
-echo "  Full Entry: $passwd_line"
-# Otherwise, print that the user has been found and move on
+    if [[ -z "$passwd_line" ]]; then
+        echo -e "${RED}[MISSING]${NC} User '$user' does NOT exist."
+        echo
+        continue
+    fi
+
+    echo -e "${GREEN}[FOUND]${NC} User '$user'"
+    echo "  Full Entry: $passwd_line"
 
 done
 
@@ -107,21 +101,21 @@ echo -e "${BLUE}CHECKING FOR USERS WITH A BAD SHELL/UID${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
-for user in "${regular_users[@]}"; do
+for user in "${all_users[@]}"; do
 
-passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
-[[ -z "$passwd_line" ]] && continue
+    passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+    [[ -z "$passwd_line" ]] && continue
 
-uid=$(echo "$passwd_line" | cut -d: -f3)
-shell=$(echo "$passwd_line" | cut -d: -f7)
+    uid=$(echo "$passwd_line" | cut -d: -f3)
+    shell=$(echo "$passwd_line" | cut -d: -f7)
 
-if [[ "$uid" -lt 1000 ]]; then
-    echo -e "  ${RED}[WARNING]${NC} '$user' UID is less than 1000 ($uid)"
-fi
-
-if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
-    echo -e "  ${RED}[WARNING]${NC} '$user' doesn't have an interactive shell ($shell)"
-fi
+    if [[ "$uid" -lt 1000 ]]; then
+        echo -e "  ${RED}[WARNING]${NC} '$user' UID is less than 1000 ($uid)"
+    fi
+    
+    if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
+        echo -e "  ${RED}[WARNING]${NC} '$user' doesn't have an interactive shell ($shell)"
+    fi
 
 done
 
@@ -162,37 +156,9 @@ done
 
 echo
 echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}CHECKING FOR ADMINS WITH A BAD UIDS/SHELL${NC}"
-echo -e "${BLUE}========================================${NC}"
-echo
-
-
-for user in "${admin_users[@]}"; do
-passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
-[[ -z "$passwd_line" ]] && continue
-
-uid=$(echo "$passwd_line" | cut -d: -f3)
-shell=$(echo "$passwd_line" | cut -d: -f7)
-
-if [[ "$uid" -lt 1000 ]]; then
-    echo -e "  ${RED}[WARNING]${NC} '$user' UID is less than 1000 ($uid)"
-fi
-
-if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
-    echo -e "  ${RED}[WARNING]${NC} '$user' Admin does not have an interactive shell ($shell)"
-fi
-
-echo -e "${GREEN}[FOUND]${NC} Admin '$user'"
-echo "  Full Entry: $passwd_line"
-
-done
-
-echo
-echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}CHECKING THAT ALL ADMINS ARE ADMINS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
-
 
 for user in "${admin_users[@]}"; do
 grep -q "^${user}:" "$PASSWD_FILE" || continue
