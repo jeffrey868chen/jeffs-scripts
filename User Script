@@ -40,10 +40,14 @@ echo -e "${RED}Error:${NC} /etc/passwd doesn't exist for sum reason, u should pr
 exit 1
 fi
 
+if [[ "$EUID" -ne 0 ]]; then
+    echo -e "${RED}Error:${NC} This script must be run as root (use sudo)."
+    exit 1
+fi
+
 is_admin() {
     user="$1"
-    id -nG "$user" | grep -qwE "sudo|wheel|adm"
-    # The first part figures out what groups the user is in, while the second part greps for if the user is in the admin group
+    id -nG "$user" 2>/dev/null | grep -qwE "sudo|wheel|adm"
 }
 
 
@@ -95,11 +99,7 @@ echo -e "${GREEN}[FOUND]${NC} User '$user'"
 echo "  Full Entry: $passwd_line"
 # Otherwise, print that the user has been found and move on
 
-uid=$(echo "$passwd_line" | cut -d: -f3)
-shell=$(echo "$passwd_line" | cut -d: -f7)
-
-# Mark the third column of the password line as the user's id
-# Mark the seventh column of the password line as the user's shell
+done
 
 echo
 echo -e "${BLUE}========================================${NC}"
@@ -107,13 +107,23 @@ echo -e "${BLUE}CHECKING FOR USERS WITH A BAD SHELL/UID${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
+for user in "${regular_users[@]}"; do
+
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+[[ -z "$passwd_line" ]] && continue
+
+uid=$(echo "$passwd_line" | cut -d: -f3)
+shell=$(echo "$passwd_line" | cut -d: -f7)
+
 if [[ "$uid" -lt 1000 ]]; then
-    echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
+    echo -e "  ${RED}[WARNING]${NC} '$user' UID is less than 1000 ($uid)"
 fi
 
 if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
-    echo -e "  ${RED}[WARNING]${NC} User does not have an interactive shell ($shell)"
+    echo -e "  ${RED}[WARNING]${NC} '$user' doesn't have an interactive shell ($shell)"
 fi
+
+done
 
 echo
 echo -e "${BLUE}========================================${NC}"
@@ -121,10 +131,12 @@ echo -e "${BLUE}CHECKING FOR USERS WITH ADMIN PERMS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
+for user in "${regular_users[@]}"; do
+
 if is_admin "$user"; then
-    echo -e "  ${RED}[WARNING]${NC} Regular user has admin privileges!"
+    echo -e "  ${RED}[WARNING]${NC} '$user' Regular user has admin privileges!"
 else
-    echo -e "  ${GREEN}[PASS]${NC} User is not an administrator."
+    echo -e "  ${GREEN}[PASS]${NC} '$user' is not an administrator."
 fi
 
 echo
@@ -146,8 +158,7 @@ if [[ -z "$passwd_line" ]]; then
     continue
 fi
 
-uid=$(echo "$passwd_line" | cut -d: -f3)
-shell=$(echo "$passwd_line" | cut -d: -f7)
+done
 
 echo
 echo -e "${BLUE}========================================${NC}"
@@ -155,16 +166,26 @@ echo -e "${BLUE}CHECKING FOR ADMINS WITH A BAD UIDS/SHELL${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
+
+for user in "${admin_users[@]}"; do
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+[[ -z "$passwd_line" ]] && continue
+
+uid=$(echo "$passwd_line" | cut -d: -f3)
+shell=$(echo "$passwd_line" | cut -d: -f7)
+
 if [[ "$uid" -lt 1000 ]]; then
-    echo -e "  ${RED}[WARNING]${NC} UID is less than 1000 ($uid)"
+    echo -e "  ${RED}[WARNING]${NC} '$user' UID is less than 1000 ($uid)"
 fi
 
 if [[ "$shell" == *"nologin"* || "$shell" == *"false"* ]]; then
-    echo -e "  ${RED}[WARNING]${NC} Admin does not have an interactive shell ($shell)"
+    echo -e "  ${RED}[WARNING]${NC} '$user' Admin does not have an interactive shell ($shell)"
 fi
 
 echo -e "${GREEN}[FOUND]${NC} Admin '$user'"
 echo "  Full Entry: $passwd_line"
+
+done
 
 echo
 echo -e "${BLUE}========================================${NC}"
@@ -172,10 +193,15 @@ echo -e "${BLUE}CHECKING THAT ALL ADMINS ARE ADMINS${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
+
+for user in "${admin_users[@]}"; do
+grep -q "^${user}:" "$PASSWD_FILE" || continue
+passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+
 if is_admin "$user"; then
-    echo -e "  ${GREEN}[PASS]${NC} User has admin privileges."
+    echo -e "  ${GREEN}[PASS]${NC} '$user' has admin privileges."
 else
-    echo -e "  ${RED}[WARNING]${NC} User is listed as an admin but is NOT in sudo/wheel/adm."
+    echo -e "  ${RED}[WARNING]${NC} '$user' is listed as an admin but is NOT in sudo/wheel/adm."
 fi
 
 echo
@@ -193,12 +219,20 @@ ROOT_IMPOSTERS=$(awk -F: '$3 == 0 && $1 != "root" {print $1}' /etc/passwd)
 if [[ -n "$ROOT_IMPOSTERS" ]]; then
     echo -e "  ${RED}[WARNING]${NC} There are root imposters:"
     echo "$ROOT_IMPOSTERS"
+else
+    echo -e "  ${GREEN}[PASS]${NC} No root imposters found."
 fi
+
+echo
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}CHECKING USER ENTRY FORMATS${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo
 
 for user in "${all_users[@]}"; do
 passwd_line=$(grep "^${user}:" "$PASSWD_FILE")
+[[ -z "$passwd_line" ]] && continue
 
-user=$(echo "$passwd_line" | cut -d: -f1)
 passwd=$(echo "$passwd_line" | cut -d: -f2)
 uid=$(echo "$passwd_line" | cut -d: -f3)
 gid=$(echo "$passwd_line" | cut -d: -f4)
@@ -208,15 +242,15 @@ shell=$(echo "$passwd_line" | cut -d: -f7)
 
 
 if [[ "$passwd" != "x" ]]; then
-    echo -e "${RED}[WARNING]${NC} Password field is not set to 'x' ($passwd)"
+    echo -e "${RED}[WARNING]${NC} '$user' Password field is not set to 'x' ($passwd)"
 fi
 
 if [[ "$gecos" != ",,," ]]; then
-    echo -e "${RED}[WARNING]${NC} GECOS field is not set to ,,, ($gecos)"
+    echo -e "${RED}[WARNING]${NC} '$user' GECOS field is not set to ,,, ($gecos)"
 fi
 
 if [[ "$home" != "/home/$user" ]]; then
-    echo -e "${RED}[WARNING]${NC} Home directory is not /home/$user ($home)"
+    echo -e "${RED}[WARNING]${NC} '$user' Home directory is not /home/$user ($home)"
 fi
 done
 
@@ -302,11 +336,17 @@ echo -e "${BLUE}CHECKING FOR CORRECT PASSWORD HASHES${NC}"
 echo -e "${BLUE}========================================${NC}"
 echo
 
-if [[ "$hash" == \$y\$* ]]; then
-    echo -e "${GREEN}[PASS]${NC} User '$user' is using yescrypt."
-else
-    echo -e "${RED}[WARNING]${NC} User '$user' is not using yescrypt."
-fi
+while IFS=: read -r username hash _; do
+    # Skip system accounts and non-shadow lines
+    uid=$(id -u "$username" 2>/dev/null)
+    [[ -z "$uid" || "$uid" -lt 1000 || "$username" == "nobody" ]] && continue
+
+    if [[ "$hash" == \$y\$* ]]; then
+        echo -e "  ${GREEN}[PASS]${NC} User '$username' is using yescrypt."
+    else
+        echo -e "  ${RED}[WARNING]${NC} User '$username' is NOT using yescrypt."
+    fi
+done < /etc/shadow
 
 echo
 echo -e "${BLUE}========================================${NC}"
