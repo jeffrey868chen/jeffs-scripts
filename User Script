@@ -41,7 +41,7 @@ if [[ ! -f "$PASSWD_FILE" ]]; then
 fi
 
 if [[ "$EUID" -ne 0 ]]; then
-    echo -e "${WARN}Error:${NC} This script must be run as root (use sudo)."
+    echo -e "${WARN}Error:${NC} This script must be run as with sudo (dont use root plz)."
     exit 1
 fi
 
