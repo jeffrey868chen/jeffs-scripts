@@ -214,11 +214,8 @@ for user in "${all_users[@]}"; do
     [[ -z "$passwd_line" ]] && continue
 
     passwd=$(echo "$passwd_line" | cut -d: -f2)
-    uid=$(echo "$passwd_line" | cut -d: -f3)
-    gid=$(echo "$passwd_line" | cut -d: -f4)
     gecos=$(echo "$passwd_line" | cut -d: -f5)
     home=$(echo "$passwd_line" | cut -d: -f6)
-    shell=$(echo "$passwd_line" | cut -d: -f7)
 
 
     if [[ "$passwd" != "x" ]]; then
