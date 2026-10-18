@@ -1,8 +1,4 @@
 #!/bin/bash
-PASSWD_FILE="/etc/passwd"
-
-regular_users=()
-admin_users=()
 
 BOLD='\033[1m'
 LIGHT='\033[2m'
@@ -33,6 +29,14 @@ WHITEBG='\033[47m'
 NC='\033[0m'
 
 # The above values are ANSII codes to make aesthetically pleasing text (wow)!!
+
+user_script() {
+
+PASSWD_FILE="/etc/passwd"
+
+regular_users=()
+admin_users=()
+
 
 # Check if /etc/passwd exists and print an error message if it doesn't
 if [[ ! -f "$PASSWD_FILE" ]]; then
@@ -329,3 +333,51 @@ echo
 echo -e "${BLUE}========================================${NC}"
 echo -e "${BLUE}AUDIT COMPLETE${NC}"
 echo -e "${BLUE}========================================${NC}"
+
+}
+
+main_menu() {
+    while true; do
+        clear
+
+        echo -e "${BLUE}===============================================================================================${NC}"
+        echo -e "${BLUE}    _,.---._                                ,-,--.    ,-,--.     ,----.                ,-,--.  ${NC}"
+        echo -e "${BLUE}  ,-.' , -  `.   _,..---._  ,--.-.  .-,--.,-.'-  _\ ,-.'-  _\ ,-.--` , \ .--.-. .-.-.,-.'-  _\ ${NC}"
+        echo -e "${BLUE} /==/_,  ,  - \/==/,   -  \/==/- / /=/_ //==/_ ,_.'/==/_ ,_.'|==|-  _.-`/==/ -|/=/  /==/_ ,_.' ${NC}"
+        echo -e "${BLUE}|==|   .=.     |==|   _   _\==\, \/=/. / \==\  \   \==\  \   |==|   `.-.|==| ,||=| -\==\  \    ${NC}"
+        echo -e "${BLUE}|==|_ : ;=:  - |==|  .=.   |\==\  \/ -/   \==\ -\   \==\ -\ /==/_ ,    /|==|- | =/  |\==\ -\   ${NC}"
+        echo -e "${BLUE}|==| , '='     |==|,|   | -| |==|  ,_/    _\==\ ,\  _\==\ ,\|==|    .-' |==|,  \/ - |_\==\ ,\  ${NC}"
+        echo -e "${BLUE} \==\ -    ,_ /|==|  '='   / \==\-, /    /==/\/ _ |/==/\/ _ |==|_  ,`-._|==|-   ,   /==/\/ _ | ${NC}"
+        echo -e "${BLUE}  '.='. -   .' |==|-,   _`/  /==/._/     \==\ - , /\==\ - , /==/ ,     //==/ , _  .'\==\ - , / ${NC}"
+        echo -e "${BLUE}    `--`--''   `-.`.____.'   `--`-`       `--`---'  `--`---'`--`-----`` `--`..---'   `--`---'  ${NC}"
+        echo -e "${BLUE}===============================================================================================${NC}"
+        echo
+        echo "  1) User script"
+        echo "  2) N/A"
+        echo "  3) N/A"
+        echo "  4) N/A"
+        echo "  5) N/A"
+        echo "  6) N/A"
+        echo "  0) Exit"
+        echo
+        read -r -p "Select an option: " choice
+
+        case "$choice" in
+            1)
+                user_script
+                ;;
+            0)
+                echo "Exiting..."
+                return 0
+                ;;
+            *)
+                echo "Invalid option!"
+                ;;
+        esac
+
+        echo
+        read -r -p "Press Enter to return to the menu..."
+    done
+}
+
+main_menu
