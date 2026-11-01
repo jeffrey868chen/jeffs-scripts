@@ -398,117 +398,110 @@ KNOWN_SOCKETS=(
     fi
 
     local dir="/etc/ufw"
-    local file hash expected
-    local modified=0 missing=0 unexpected=0
+    local file path hash actual expected_hash expected_perm
+    local modified=0 missing=0 unexpected=0 perm_failed=0 errors=0
 
-    declare -A baseline=(
-        ["./after.init"]="26a3172f1e3d63e2fde595671faf9a90"
-        ["./applications.d/cups"]="29e98a6d850da251e180c3d68dec2bd3"
-        ["./user.rules"]="a3fbaef910466dcc137f9037106c78f7"
-        ["./user6.rules"]="9d2810d270f5e8db6c6110f3f7fafa2a"
-        ["./before.rules"]="554ea6948500e76ce5c1610b9c108bbf"
-        ["./ufw.conf"]="44eab12c7b5c683d750b83dcffb6cccb"
-        ["./after.rules"]="53e906b055d9145d03b6a2fadeca20f1"
-        ["./after6.rules"]="c70580b5cabf73080989400422349ab2"
-        ["./before.init"]="cd7783526a1a2b25581cecd3c2daa1a4"
-        ["./sysctl.conf"]="7723079fc108eda8f57eddab3079c70a"
-        ["./before6.rules"]="601f530a9e5862345da525ec98f5a317"
+    echo
+    echo "Checking UFW files..."
+
+    # Combined baseline: MD5 hash and expected permissions.
+    # A blank hash means the entry is checked for permissions only.
+    declare -A hash_baseline=(
+        ["after.init"]="26a3172f1e3d63e2fde595671faf9a90"
+        ["applications.d/cups"]="29e98a6d850da251e180c3d68dec2bd3"
+        ["user.rules"]="a3fbaef910466dcc137f9037106c78f7"
+        ["user6.rules"]="9d2810d270f5e8db6c6110f3f7fafa2a"
+        ["before.rules"]="554ea6948500e76ce5c1610b9c108bbf"
+        ["ufw.conf"]="44eab12c7b5c683d750b83dcffb6cccb"
+        ["after.rules"]="53e906b055d9145d03b6a2fadeca20f1"
+        ["after6.rules"]="c70580b5cabf73080989400422349ab2"
+        ["before.init"]="cd7783526a1a2b25581cecd3c2daa1a4"
+        ["sysctl.conf"]="7723079fc108eda8f57eddab3079c70a"
+        ["before6.rules"]="601f530a9e5862345da525ec98f5a317"
+    )
+
+    declare -A perm_baseline=(
+        ["after.init"]="-r-----"
+        ["after.rules"]="-rw-r-----"
+        ["applications.d"]="drwxr-xr-x"
+        ["before6.rules"]="-rw-r-----"
+        ["before.init"]="-r-----"
+        ["before.rules"]="-rw-r-----"
+        ["sysctl.conf"]="-rw-r--r--"
+        ["ufw.conf"]="-rw-r--r--"
+        ["user6.rules"]="-rw-r-----"
+        ["user.rules"]="-rw-r-----"
     )
 
     declare -A seen=()
 
-echo " "   
-echo "Checking UFW files..."
+    # Check expected files and their hashes and permissions.
+    for file in "${!hash_baseline[@]}" "${!perm_baseline[@]}"; do
+        [[ -v "seen[$file]" ]] && continue
+        seen["$file"]=1
 
-    while read -r hash file; do
-        if [[ -v "baseline[$file]" ]]; then
-            seen["$file"]=1
-            expected="${baseline[$file]}"
+        path="$dir/$file"
 
-            if [[ "$hash" == "$expected" ]]; then
-                echo "[OK] $file"
+        if [[ ! -e "$path" && ! -L "$path" ]]; then
+            echo "[MISSING] $file"
+            ((missing++))
+            continue
+        fi
+
+        # Hash check, if this file has a hash baseline.
+        if [[ -v "hash_baseline[$file]" ]]; then
+            if [[ ! -f "$path" || -L "$path" ]]; then
+                echo "[ERROR] Cannot safely hash $file (not a regular file)"
+                ((errors++))
+            elif hash=$(md5sum -- "$path"); then
+                hash="${hash%% *}"
+                expected_hash="${hash_baseline[$file]}"
+
+                if [[ "$hash" == "$expected_hash" ]]; then
+                    echo "[OK] Hash: $file"
+                else
+                    echo "[MODIFIED] Hash: $file"
+                    ((modified++))
+                fi
             else
-                echo "[MODIFIED] $file"
-                ((modified++))
+                echo "[ERROR] Cannot hash $file"
+                ((errors++))
             fi
-        else
+        fi
+
+        # Permission check, if this entry has a permission baseline.
+        if [[ -v "perm_baseline[$file]" ]]; then
+            if actual=$(stat -c '%A' -- "$path"); then
+                expected_perm="${perm_baseline[$file]}"
+
+                if [[ "$actual" == "$expected_perm" ]]; then
+                    echo "[OK] Permissions: $file"
+                else
+                    echo "[ALERT] Permissions: $file"
+                    echo "  Expected: $expected_perm"
+                    echo "  Actual:   $actual"
+                    ((perm_failed++))
+                fi
+            else
+                echo "[ERROR] Cannot inspect permissions for $file"
+                ((errors++))
+            fi
+        fi
+    done
+
+    # Find unexpected files and directories anywhere under /etc/ufw.
+    while IFS= read -r -d '' path; do
+        file="${path#"$dir"/}"
+
+        if [[ ! -v "seen[$file]" ]]; then
             echo "[UNEXPECTED] $file"
             ((unexpected++))
         fi
-    done < <(
-        cd "$dir" &&
-        find . -type f -exec md5sum -- {} +
-    )
-
-    for file in "${!baseline[@]}"; do
-        if [[ ! -v "seen[$file]" ]]; then
-            echo "[MISSING] $file"
-            ((missing++))
-        fi
-    done
-
-    echo "Modified: $modified | Missing: $missing | Unexpected: $unexpected"
-    local dir="/etc/ufw"
-    local file actual expected
-    local failed=0
-
-    # Expected first column from ls -l
-    declare -A baseline=(
-        [after.init]="-r-----"
-        [after.rules]="-rw-r-----"
-        [applications.d]="drwxr-xr-x"
-        [before6.rules]="-rw-r-----"
-        [before.init]="-r-----"
-        [before.rules]="-rw-r-----"
-        [sysctl.conf]="-rw-r--r--"
-        [ufw.conf]="-rw-r--r--"
-        [user6.rules]="-rw-r-----"
-        [user.rules]="-rw-r-----"
-    )
-
-    for file in "${!baseline[@]}"; do
-        if [[ ! -e "$dir/$file" && ! -L "$dir/$file" ]]; then
-            echo "[MISSING] $file"
-            failed=1
-            continue
-        fi
-
-        actual=$(stat -c '%A' -- "$dir/$file") || {
-            echo "[ERROR] Cannot inspect $file"
-            failed=1
-            continue
-        }
-
-        expected="${baseline[$file]}"
-
-        if [[ "$actual" == "$expected" ]]; then
-            echo "[OK] $file: $actual"
-        else
-            echo "[ALERT] $file"
-            echo "  Expected: $expected"
-            echo "  Actual:   $actual"
-            failed=1
-        fi
-    done
-
-    # Report unexpected entries that aren't in the baseline
-    for path in "$dir"/*; do
-        [[ -e "$path" || -L "$path" ]] || continue
-        file="${path##*/}"
-
-        if [[ ! ${baseline[$file]+_} ]]; then
-            echo "[UNBASELINED] $file"
-            failed=1
-        fi
-    done
+    done < <(find "$dir" -mindepth 1 -print0)
 
     echo
-    if (( failed )); then
-        echo "AUDIT FAILED: Investigate the alerts above."
-        return 1
-    else
-        echo "AUDIT PASSED: Permissions match the baseline."
-    fi
+    echo "Modified hashes: $modified"
+    echo "
 
 }
 
