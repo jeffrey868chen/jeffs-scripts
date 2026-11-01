@@ -443,7 +443,7 @@ KNOWN_SOCKETS=(
         path="$dir/$file"
 
         if [[ ! -e "$path" && ! -L "$path" ]]; then
-            echo "[MISSING] $file"
+            echo "${WARN}[MISSING] $file${NC}"
             ((missing++))
             continue
         fi
@@ -451,20 +451,20 @@ KNOWN_SOCKETS=(
         # Hash check, if this file has a hash baseline.
         if [[ -v "hash_baseline[$file]" ]]; then
             if [[ ! -f "$path" || -L "$path" ]]; then
-                echo "[ERROR] Cannot safely hash $file (not a regular file)"
+                echo "${WARN}[ERROR] Cannot safely hash $file (not a regular file)${NC}"
                 ((errors++))
             elif hash=$(md5sum -- "$path"); then
                 hash="${hash%% *}"
                 expected_hash="${hash_baseline[$file]}"
 
                 if [[ "$hash" == "$expected_hash" ]]; then
-                    echo "[OK] Hash: $file"
+                    echo "${GREEN}[OK] Hash: $file${NC}"
                 else
-                    echo "[MODIFIED] Hash: $file"
+                    echo "${RED}[MODIFIED] Hash: $file${NC}"
                     ((modified++))
                 fi
             else
-                echo "[ERROR] Cannot hash $file"
+                echo "${WARN}[ERROR] Cannot hash $file${NC}"
                 ((errors++))
             fi
         fi
@@ -475,15 +475,15 @@ KNOWN_SOCKETS=(
                 expected_perm="${perm_baseline[$file]}"
 
                 if [[ "$actual" == "$expected_perm" ]]; then
-                    echo "[OK] Permissions: $file"
+                    echo "${GREEN}[OK] Permissions: $file${NC}"
                 else
-                    echo "[ALERT] Permissions: $file"
+                    echo "${WARN}[ALERT] Permissions: $file"
                     echo "  Expected: $expected_perm"
-                    echo "  Actual:   $actual"
+                    echo "  Actual:   $actual${NC}"
                     ((perm_failed++))
                 fi
             else
-                echo "[ERROR] Cannot inspect permissions for $file"
+                echo "${WARN}[ERROR] Cannot inspect permissions for $file${NC}"
                 ((errors++))
             fi
         fi
@@ -494,7 +494,7 @@ KNOWN_SOCKETS=(
         file="${path#"$dir"/}"
 
         if [[ ! -v "seen[$file]" ]]; then
-            echo "[UNEXPECTED] $file"
+            echo "${WARN}[UNEXPECTED] $file${NC}"
             ((unexpected++))
         fi
     done < <(find "$dir" -mindepth 1 -print0)
