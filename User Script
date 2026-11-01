@@ -339,7 +339,7 @@ echo -e "${BLUE}========================================${NC}"
 
 ufw_script() {
 
-echo "{BLUE}Starting UFW script...{NC}"
+echo "${BLUE}Starting UFW script...${NC}"
  if ! command -v ufw >/dev/null 2>&1; then
         echo "ERROR: UFW is not installed."
         return 1
@@ -417,7 +417,8 @@ KNOWN_SOCKETS=(
 
     declare -A seen=()
 
-    echo "Checking UFW files..."
+echo " "   
+echo "Checking UFW files..."
 
     while read -r hash file; do
         if [[ -v "baseline[$file]" ]]; then
