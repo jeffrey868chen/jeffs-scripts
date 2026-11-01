@@ -336,6 +336,61 @@ echo -e "${BLUE}========================================${NC}"
 
 }
 
+
+ufw_md5_audit() {
+    local dir="/etc/ufw"
+    local file hash expected
+    local modified=0 missing=0 unexpected=0
+
+    declare -A baseline=(
+        ["./after.init"]="26a3172f1e3d63e2fde595671faf9a90"
+        ["./applications.d/cups"]="29e98a6d850da251e180c3d68dec2bd3"
+        ["./user.rules"]="a3fbaef910466dcc137f9037106c78f7"
+        ["./user6.rules"]="9d2810d270f5e8db6c6110f3f7fafa2a"
+        ["./before.rules"]="554ea6948500e76ce5c1610b9c108bbf"
+        ["./ufw.conf"]="44eab12c7b5c683d750b83dcffb6cccb"
+        ["./after.rules"]="53e906b055d9145d03b6a2fadeca20f1"
+        ["./after6.rules"]="c70580b5cabf73080989400422349ab2"
+        ["./before.init"]="cd7783526a1a2b25581cecd3c2daa1a4"
+        ["./sysctl.conf"]="7723079fc108eda8f57eddab3079c70a"
+        ["./before6.rules"]="601f530a9e5862345da525ec98f5a317"
+    )
+
+    declare -A seen=()
+
+    echo "Auditing UFW files..."
+
+    while read -r hash file; do
+        if [[ -v "baseline[$file]" ]]; then
+            seen["$file"]=1
+            expected="${baseline[$file]}"
+
+            if [[ "$hash" == "$expected" ]]; then
+                echo "[OK] $file"
+            else
+                echo "[MODIFIED] $file"
+                ((modified++))
+            fi
+        else
+            echo "[UNEXPECTED] $file"
+            ((unexpected++))
+        fi
+    done < <(
+        cd "$dir" &&
+        find . -type f -exec md5sum -- {} +
+    )
+
+    for file in "${!baseline[@]}"; do
+        if [[ ! -v "seen[$file]" ]]; then
+            echo "[MISSING] $file"
+            ((missing++))
+        fi
+    done
+
+    echo "Modified: $modified | Missing: $missing | Unexpected: $unexpected"
+}
+
+
 while true; do
     clear
 
