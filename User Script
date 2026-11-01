@@ -338,6 +338,63 @@ echo -e "${BLUE}========================================${NC}"
 
 
 ufw_script() {
+
+echo "starting ufw hardening script..."
+ if ! command -v ufw >/dev/null 2>&1; then
+        echo "ERROR: UFW is not installed."
+        return 1
+    fi
+
+KNOWN_SOCKETS=(
+    "udp|127.0.0.54:53"
+    "udp|127.0.0.53%lo:53"
+    "udp|0.0.0.0:5353"
+    "udp|[::]:5353"
+    "tcp|127.0.0.1:631"
+    "tcp|[::1]:631"
+    "tcp|127.0.0.54:53"
+    "tcp|127.0.0.53%lo:53"
+)
+
+    echo "checking listening ports..."
+
+    if ! command -v ss >/dev/null 2>&1; then
+        echo "ERROR: ss command not found."
+        return 1
+    fi
+
+    local output line proto local_addr key found=0
+    local -A known=()
+
+    for key in "${KNOWN_SOCKETS[@]}"; do
+        known["$key"]=1
+    done
+
+    if ! output=$(ss -H -tulpn); then
+        echo "ERROR: Failed to collect sockets."
+        return 1
+    fi
+
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+
+        # ss columns: Netid State Recv-Q Send-Q Local-Address Peer-Address ...
+        read -r proto _ _ _ local_addr _ <<< "$line"
+        key="$proto|$local_addr"
+
+        if [[ ! ${known[$key]+present} ]]; then
+            if (( found == 0 )); then
+                echo " Unrecognized sockets found:"
+            fi
+            printf '  %s\n' "$line"
+            found=1
+        fi
+    done <<< "$output"
+
+    if (( found == 0 )); then
+        echo "No unrecognized sockets detected."
+    fi
+
     local dir="/etc/ufw"
     local file hash expected
     local modified=0 missing=0 unexpected=0
