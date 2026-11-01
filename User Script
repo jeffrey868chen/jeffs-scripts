@@ -448,6 +448,68 @@ echo "Checking UFW files..."
     done
 
     echo "Modified: $modified | Missing: $missing | Unexpected: $unexpected"
+    local dir="/etc/ufw"
+    local file actual expected
+    local failed=0
+
+    # Expected first column from ls -l
+    declare -A baseline=(
+        [after.init]="-r-----"
+        [after.rules]="-rw-r-----"
+        [applications.d]="drwxr-xr-x"
+        [before6.rules]="-rw-r-----"
+        [before.init]="-r-----"
+        [before.rules]="-rw-r-----"
+        [sysctl.conf]="-rw-r--r--"
+        [ufw.conf]="-rw-r--r--"
+        [user6.rules]="-rw-r-----"
+        [user.rules]="-rw-r-----"
+    )
+
+    for file in "${!baseline[@]}"; do
+        if [[ ! -e "$dir/$file" && ! -L "$dir/$file" ]]; then
+            echo "[MISSING] $file"
+            failed=1
+            continue
+        fi
+
+        actual=$(stat -c '%A' -- "$dir/$file") || {
+            echo "[ERROR] Cannot inspect $file"
+            failed=1
+            continue
+        }
+
+        expected="${baseline[$file]}"
+
+        if [[ "$actual" == "$expected" ]]; then
+            echo "[OK] $file: $actual"
+        else
+            echo "[ALERT] $file"
+            echo "  Expected: $expected"
+            echo "  Actual:   $actual"
+            failed=1
+        fi
+    done
+
+    # Report unexpected entries that aren't in the baseline
+    for path in "$dir"/*; do
+        [[ -e "$path" || -L "$path" ]] || continue
+        file="${path##*/}"
+
+        if [[ ! ${baseline[$file]+_} ]]; then
+            echo "[UNBASELINED] $file"
+            failed=1
+        fi
+    done
+
+    echo
+    if (( failed )); then
+        echo "AUDIT FAILED: Investigate the alerts above."
+        return 1
+    else
+        echo "AUDIT PASSED: Permissions match the baseline."
+    fi
+
 }
 
 
