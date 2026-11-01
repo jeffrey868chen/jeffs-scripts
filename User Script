@@ -337,7 +337,7 @@ echo -e "${BLUE}========================================${NC}"
 }
 
 
-ufw_md5_audit() {
+ufw_script() {
     local dir="/etc/ufw"
     local file hash expected
     local modified=0 missing=0 unexpected=0
@@ -413,7 +413,7 @@ BANNER
     printf '%s\n' "${BLUE}===============================================================================================${NC}"
     echo
     echo "  1) User script"
-    echo "  2) N/A"
+    echo "  2) UFW script"
     echo "  3) N/A"
     echo "  4) N/A"
     echo "  5) N/A"
@@ -425,6 +425,9 @@ BANNER
     case "$choice" in
         1)
             user_script
+            ;;
+        2)
+            ufw_script
             ;;
         0)
             echo "Exiting..."
