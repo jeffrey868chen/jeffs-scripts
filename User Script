@@ -339,7 +339,7 @@ echo -e "${BLUE}========================================${NC}"
 
 ufw_script() {
 
-echo "starting ufw hardening script..."
+echo "{BLUE}Starting UFW script...{NC}"
  if ! command -v ufw >/dev/null 2>&1; then
         echo "ERROR: UFW is not installed."
         return 1
@@ -350,13 +350,15 @@ KNOWN_SOCKETS=(
     "udp|127.0.0.53%lo:53"
     "udp|0.0.0.0:5353"
     "udp|[::]:5353"
+    "udp|0.0.0.0:54136
+    "udp|[::]:35279
     "tcp|127.0.0.1:631"
     "tcp|[::1]:631"
     "tcp|127.0.0.54:53"
     "tcp|127.0.0.53%lo:53"
 )
 
-    echo "checking listening ports..."
+    echo "Checking Listening Ports..."
 
     if ! command -v ss >/dev/null 2>&1; then
         echo "ERROR: ss command not found."
@@ -415,7 +417,7 @@ KNOWN_SOCKETS=(
 
     declare -A seen=()
 
-    echo "Auditing UFW files..."
+    echo "Checking UFW files..."
 
     while read -r hash file; do
         if [[ -v "baseline[$file]" ]]; then
