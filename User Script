@@ -501,7 +501,7 @@ KNOWN_SOCKETS=(
 
     echo
     echo "Modified hashes: $modified"
-    echo "
+    echo ""
 
 }
 
