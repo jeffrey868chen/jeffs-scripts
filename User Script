@@ -421,11 +421,11 @@ KNOWN_SOCKETS=(
     )
 
     declare -A perm_baseline=(
-        ["after.init"]="-rw-r--"
+        ["after.init"]="-rw-r-----"
         ["after.rules"]="-rw-r-----"
         ["applications.d"]="drwxr-xr-x"
         ["before6.rules"]="-rw-r-----"
-        ["before.init"]="-rw-r--"
+        ["before.init"]="-rw-r-----"
         ["before.rules"]="-rw-r-----"
         ["sysctl.conf"]="-rw-r--r--"
         ["ufw.conf"]="-rw-r--r--"
