@@ -388,6 +388,7 @@ KNOWN_SOCKETS=(
         if [[ ! ${known[$key]+present} ]]; then
             if (( found == 0 )); then
                 #echo " Unrecognized sockets found:"
+echo -n ""
             fi
             printf '  %s\n' "$line"
             found=1
@@ -460,6 +461,7 @@ KNOWN_SOCKETS=(
 
                 if [[ "$hash" == "$expected_hash" ]]; then
                     #echo "${GREEN}[OK]${NC} Hash: $file"
+echo -n ""
                 else
                     echo "${WARN}[MODIFIED]${NC} Hash: $file"
                     ((modified++))
@@ -477,6 +479,7 @@ KNOWN_SOCKETS=(
 
                 if [[ "$actual" == "$expected_perm" ]]; then
                     #echo "${GREEN}[OK]${NC} Permissions: $file"
+echo -n ""
                 else
                     echo "${WARN}[ALERT]${NC} Permissions: $file"
                     echo "  Expected: $expected_perm"
