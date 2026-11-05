@@ -1,4 +1,5 @@
 #!/bin/bash
+set -euo pipefail
 
 BOLD=$'\033[1m'
 LIGHT=$'\033[2m'
