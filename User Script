@@ -536,9 +536,9 @@ echo -n ""
     echo ""
 
 echo
-read -rp "Press ENTER to continue with UFW hardening or Q to return to the main menu: " choice
+read -rp "Press ENTER to continue with UFW hardening or Q to return to the main menu: " exit
 
-if [[ "$choice" =~ ^[Qq]$ ]]; then
+if [[ "$exit" =~ ^[Qq]$ ]]; then
     echo "Returning to main menu..."
     return 0
 fi
@@ -581,8 +581,8 @@ while true; do
             echo "The name 'Argus' comes from Homer's Odyssey"
             echo "Argus is Odysseus's faithful and loyal dog."
             echo "Now get back into the image and earn more points (or press q to view changelogs)!"
-
-            if [[ "$choice" =~ ^[Qq]$ ]]; then
+    read -r -p "Select an option: " changelogs
+            if [[ "$changelogs" =~ ^[Qq]$ ]]; then
     echo "Changelogs:"
     echo "9/8/26: made user script hopefully this grows into something bigger"
     echo "9/10/26: added checks for bad login shells"
