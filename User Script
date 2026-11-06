@@ -525,7 +525,7 @@ echo "Continuing with UFW hardening..."
 while true; do
     clear
 
-banner {
+banner() {
 
   printf '%s\n' "${BLUE}======================================================================${NC}"
 
