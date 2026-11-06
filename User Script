@@ -1,5 +1,30 @@
 #!/bin/bash
 
+banner() {
+
+  printf '%s\n' "${BLUE}======================================================================${NC}"
+
+    printf "${BLUE}"
+    cat <<'BANNER'
+   ,---.                       _,---.                ,-,--.  
+ .--.'  \      .-.,.---.   _.='.'-,  \ .--.-. .-.-.,-.'-  _\ 
+ \==\-/\ \    /==/  `   \ /==.'-     //==/ -|/=/  /==/_ ,_.' 
+ /==/-|_\ |  |==|-, .=., /==/ -   .-' |==| ,||=| -\==\  \    
+ \==\,   - \ |==|   '='  /==|_   /_,-.|==|- | =/  |\==\ -\   
+ /==/ -   ,| |==|- ,   .'|==|  , \_.' )==|,  \/ - |_\==\ ,\  
+/==/-  /\ - \|==|_  . ,'.\==\-  ,    (|==|-   ,   /==/\/ _ | 
+\==\ _.\=\.-'/==/  /\ ,  )/==/ _  ,  //==/ , _  .'\==\ - , / 
+ `--`        `--`-`--`--' `--`------' `--`..---'   `--`---'  
+Brought to you by:
+Jeffrey Chen and the hardworking team at CyberAegis Odysseus
+Special shoutout to: 
+Alan Yu, Alex King, Aditi Patel, Vyaan Gyaltsen, and Arnav Jain
+BANNER
+    printf '%s\n' "${NC}"
+
+    printf '%s\n' "${BLUE}======================================================================${NC}"
+}
+
 BOLD=$'\033[1m'
 LIGHT=$'\033[2m'
 ITALIC=$'\033[3m'
@@ -525,31 +550,8 @@ echo "Continuing with UFW hardening..."
 while true; do
     clear
 
-banner() {
+    banner
 
-  printf '%s\n' "${BLUE}======================================================================${NC}"
-
-    printf "${BLUE}"
-    cat <<'BANNER'
-   ,---.                       _,---.                ,-,--.  
- .--.'  \      .-.,.---.   _.='.'-,  \ .--.-. .-.-.,-.'-  _\ 
- \==\-/\ \    /==/  `   \ /==.'-     //==/ -|/=/  /==/_ ,_.' 
- /==/-|_\ |  |==|-, .=., /==/ -   .-' |==| ,||=| -\==\  \    
- \==\,   - \ |==|   '='  /==|_   /_,-.|==|- | =/  |\==\ -\   
- /==/ -   ,| |==|- ,   .'|==|  , \_.' )==|,  \/ - |_\==\ ,\  
-/==/-  /\ - \|==|_  . ,'.\==\-  ,    (|==|-   ,   /==/\/ _ | 
-\==\ _.\=\.-'/==/  /\ ,  )/==/ _  ,  //==/ , _  .'\==\ - , / 
- `--`        `--`-`--`--' `--`------' `--`..---'   `--`---'  
-Brought to you by:
-Jeffrey Chen and the hardworking team at CyberAegis Odysseus
-Special shoutout to: 
-Alan Yu, Alex King, Aditi Patel, Vyaan Gyaltsen, and Arnav Jain
-BANNER
-    printf '%s\n' "${NC}"
-
-    printf '%s\n' "${BLUE}======================================================================${NC}"
-}
-banner()
     echo
     echo "  1) User script"
     echo "  2) UFW script"
@@ -559,6 +561,7 @@ banner()
     echo "  6) Info"
     echo "  0) Exit"
     echo
+
     read -r -p "Select an option: " choice
 
     case "$choice" in
