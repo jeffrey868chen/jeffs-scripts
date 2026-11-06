@@ -340,7 +340,9 @@ echo -e "${BLUE}========================================${NC}"
 
 ufw_script() {
 
-echo "${BLUE}Starting UFW script...${NC}"
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}Starting UFW baseline${NC}"
+echo -e "${BLUE}========================================${NC}"
  if ! command -v ufw >/dev/null 2>&1; then
         echo "ERROR: UFW is not installed."
         return 1
@@ -405,7 +407,6 @@ echo -n ""
 
     echo
     echo "Checking UFW files..."
-
     # Combined baseline: MD5 hash and expected permissions.
     # A blank hash means the entry is checked for permissions only.
     declare -A hash_baseline=(
@@ -507,29 +508,50 @@ echo -n ""
     echo "Modified hashes: $modified"
     echo ""
 
+echo
+read -rp "Press ENTER to continue with UFW hardening or Q to return to the main menu: " choice
+
+if [[ "$choice" =~ ^[Qq]$ ]]; then
+    echo "Returning to main menu..."
+    return 0
+fi
+
+echo "Continuing with UFW hardening..."
+
 }
+
+echo -e "${BLUE}========================================${NC}"
+echo -e "${BLUE}Starting UFW script${NC}"
+echo -e "${BLUE}========================================${NC}"
+
+
 
 
 while true; do
     clear
 
-  printf '%s\n' "${BLUE}===============================================================================================${NC}"
+
+
+  printf '%s\n' "${BLUE}======================================================================${NC}"
 
     printf "${BLUE}"
     cat <<'BANNER'
-    _,.---._                                ,-,--.    ,-,--.     ,----.                ,-,--.
-  ,-.' , -  `.   _,..---._  ,--.-.  .-,--.,-.'-  _\ ,-.'-  _\ ,-.--` , \ .--.-. .-.-.,-.'-  _\
- /==/_,  ,  - \/==/,   -  \/==/- / /=/_ //==/_ ,_.'/==/_ ,_.'|==|-  _.-`/==/ -|/=/  /==/_ ,_.'
-|==|   .=.     |==|   _   _\==\, \/=/. / \==\  \   \==\  \   |==|   `.-.|==| ,||=| -\==\  \
-|==|_ : ;=:  - |==|  .=.   |\==\  \/ -/   \==\ -\   \==\ -\ /==/_ ,    /|==|- | =/  |\==\ -\
-|==| , '='     |==|,|   | -| |==|  ,_/    _\==\ ,\  _\==\ ,\|==|    .-' |==|,  \/ - |_\==\ ,\
- \==\ -    ,_ /|==|  '='   / \==\-, /    /==/\/ _ |/==/\/ _ |==|_  ,`-._|==|-   ,   /==/\/ _ |
-  '.='. -   .' |==|-,   _`/  /==/._/     \==\ - , /\==\ - , /==/ ,     //==/ , _  .'\==\ - , /
-    `--`--''   `-.`.____.'   `--`-`       `--`---'  `--`---'`--`-----`` `--`..---'   `--`---'
+   ,---.                       _,---.                ,-,--.  
+ .--.'  \      .-.,.---.   _.='.'-,  \ .--.-. .-.-.,-.'-  _\ 
+ \==\-/\ \    /==/  `   \ /==.'-     //==/ -|/=/  /==/_ ,_.' 
+ /==/-|_\ |  |==|-, .=., /==/ -   .-' |==| ,||=| -\==\  \    
+ \==\,   - \ |==|   '='  /==|_   /_,-.|==|- | =/  |\==\ -\   
+ /==/ -   ,| |==|- ,   .'|==|  , \_.' )==|,  \/ - |_\==\ ,\  
+/==/-  /\ - \|==|_  . ,'.\==\-  ,    (|==|-   ,   /==/\/ _ | 
+\==\ _.\=\.-'/==/  /\ ,  )/==/ _  ,  //==/ , _  .'\==\ - , / 
+ `--`        `--`-`--`--' `--`------' `--`..---'   `--`---'  
+Brought to you by:
+Jeffrey Chen and the team of CyberAegis Odysseus
+Special shoutout to: Alan Yu, Alex King, Aditi Patel, Vyaan Gyaltsen, and Arnav Jain
 BANNER
     printf '%s\n' "${NC}"
 
-    printf '%s\n' "${BLUE}===============================================================================================${NC}"
+    printf '%s\n' "${BLUE}======================================================================${NC}"
     echo
     echo "  1) User script"
     echo "  2) UFW script"
