@@ -573,7 +573,7 @@ while true; do
             ;;
         6)
             clear
-            banner()
+            banner
             echo "This is the linux hardening script for CyberAegis Odysseus"
             echo "The name 'Argus' comes from Homer's Odyssey"
             echo "Argus is Odysseus's faithful and loyal dog."
