@@ -536,14 +536,13 @@ echo -n ""
     echo ""
 
 echo
-read -rp "Press ENTER to continue with UFW hardening or Q to return to the main menu: " exit
+read -rp "Press ENTER to continue with UFW hardening or w to return to the main menu: " exit
 
-if [[ "$exit" =~ ^[Qq]$ ]]; then
+if [[ "$exit" =~ ^[Ww]$ ]]; then
     echo "Returning to main menu..."
     return 0
 fi
 
-echo "Continuing with UFW hardening..."
 
 }
 
