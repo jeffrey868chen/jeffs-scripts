@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 
 BOLD=$'\033[1m'
 LIGHT=$'\033[2m'
@@ -520,10 +519,6 @@ echo "Continuing with UFW hardening..."
 
 }
 
-echo -e "${BLUE}========================================${NC}"
-echo -e "${BLUE}Starting UFW script${NC}"
-echo -e "${BLUE}========================================${NC}"
-
 
 
 
@@ -558,7 +553,7 @@ BANNER
     echo "  3) N/A"
     echo "  4) N/A"
     echo "  5) N/A"
-    echo "  6) N/A"
+    echo "  6) Info"
     echo "  0) Exit"
     echo
     read -r -p "Select an option: " choice
@@ -569,6 +564,15 @@ BANNER
             ;;
         2)
             ufw_script
+            ;;
+        6)
+            clear
+            BANNER
+            echo "This is the linux hardening script for CyberAegis Odysseus"
+            echo "The name 'Argus' comes from Homer's Odyssey"
+            echo "Argus is Odysseus's faithful and loyal dog."
+            echo "Now get back into the image and earn more points!"
+
             ;;
         0)
             echo "Exiting..."
