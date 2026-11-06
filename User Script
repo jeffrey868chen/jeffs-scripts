@@ -16,7 +16,7 @@ banner() {
 \==\ _.\=\.-'/==/  /\ ,  )/==/ _  ,  //==/ , _  .'\==\ - , / 
  `--`        `--`-`--`--' `--`------' `--`..---'   `--`---'  
 
-Version: 0.3.24
+Version: 0.4.24
 
 Brought to you by:
 Jeffrey Chen and the hardworking team at CyberAegis Odysseus
@@ -591,7 +591,7 @@ while true; do
     echo "10/11/26: made the script a lot cleaner"
     echo "10/18/26: added main menu!!!!"
     echo "11/1/26: added ufw auditing script"
-    echo "11/5/26: fixed some bugs in the ufw script"
+    echo "11/5/26: fixed some bugs in the ufw script along with super secret functions"
 
 fi
 
