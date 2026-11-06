@@ -525,7 +525,7 @@ echo "Continuing with UFW hardening..."
 while true; do
     clear
 
-
+banner {
 
   printf '%s\n' "${BLUE}======================================================================${NC}"
 
@@ -541,12 +541,15 @@ while true; do
 \==\ _.\=\.-'/==/  /\ ,  )/==/ _  ,  //==/ , _  .'\==\ - , / 
  `--`        `--`-`--`--' `--`------' `--`..---'   `--`---'  
 Brought to you by:
-Jeffrey Chen and the team of CyberAegis Odysseus
-Special shoutout to: Alan Yu, Alex King, Aditi Patel, Vyaan Gyaltsen, and Arnav Jain
+Jeffrey Chen and the hardworking team at CyberAegis Odysseus
+Special shoutout to: 
+Alan Yu, Alex King, Aditi Patel, Vyaan Gyaltsen, and Arnav Jain
 BANNER
     printf '%s\n' "${NC}"
 
     printf '%s\n' "${BLUE}======================================================================${NC}"
+}
+banner()
     echo
     echo "  1) User script"
     echo "  2) UFW script"
@@ -567,7 +570,7 @@ BANNER
             ;;
         6)
             clear
-            BANNER
+            banner()
             echo "This is the linux hardening script for CyberAegis Odysseus"
             echo "The name 'Argus' comes from Homer's Odyssey"
             echo "Argus is Odysseus's faithful and loyal dog."
