@@ -1,5 +1,18 @@
 #!/bin/bash
 
+unauthorized_bins() {
+    local allowed=(apt gnome-help highlight-mint search yelp)
+
+    for file in /usr/local/bin/*; do
+        [[ -e "$file" ]] || continue
+        local name="${file##*/}"
+
+        if [[ ! " ${allowed[*]} " =~ " $name " ]]; then
+            echo "Not normal binary found: $file"
+        fi
+    done
+}
+
 banner() {
 
   printf '%s\n' "${BLUE}======================================================================${NC}"
@@ -544,6 +557,9 @@ if [[ "$exit" =~ ^[Ww]$ ]]; then
 fi
 
 
+
+
+
 }
 
 
@@ -555,9 +571,9 @@ while true; do
     banner
 
     echo
-    echo "  1) User script"
-    echo "  2) UFW script"
-    echo "  3) N/A"
+    echo "  1) Binary check"
+    echo "  2) User script"
+    echo "  3) UFW script"
     echo "  4) N/A"
     echo "  5) N/A"
     echo "  6) Info"
@@ -568,9 +584,12 @@ while true; do
 
     case "$choice" in
         1)
-            user_script
+            unauthorized_bins
             ;;
         2)
+            user_script
+            ;;
+        3)
             ufw_script
             ;;
         6)
@@ -591,6 +610,7 @@ while true; do
     echo "10/18/26: added main menu!!!!"
     echo "11/1/26: added ufw auditing script"
     echo "11/5/26: fixed some bugs in the ufw script along with super secret functions"
+    echo "11/8/26: added checks for unauthorized binaries"
 
 fi
 
